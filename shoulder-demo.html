@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>肩部合并测量 Demo</title>
+  <style>
+    :root {
+      --bg: #050607;
+      --panel: #505050;
+      --track: #192128;
+      --track-active: #27323a;
+      --blue: #0089ff;
+      --text: #f4f7fb;
+      --muted: #7e8a94;
+      --orange: #ff9300;
+      --green: #08d320;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      gap: 18px;
+      padding: 24px;
+      background: #eef1f5;
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+    }
+
+    .device {
+      width: min(390px, calc(100vw - 32px));
+      aspect-ratio: 390 / 660;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 58% 44%, rgba(0, 104, 210, 0.15), transparent 26%),
+        linear-gradient(180deg, #020303 0%, #050606 100%);
+      border: 1px solid #171c20;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+    }
+
+    .screen {
+      position: absolute;
+      inset: 0;
+      padding: 24px 20px 20px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 16px;
+      font-size: 13px;
+      color: #d8dde4;
+      letter-spacing: 0;
+    }
+
+    .icons {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .icon {
+      width: 12px;
+      height: 8px;
+      border: 1px solid #d8dde4;
+      border-top: 0;
+      opacity: 0.9;
+      transform: skewX(-12deg);
+    }
+
+    .battery {
+      width: 14px;
+      height: 8px;
+      border: 1px solid #e6edf4;
+      position: relative;
+      border-radius: 1px;
+    }
+
+    .battery::after {
+      content: "";
+      position: absolute;
+      right: -4px;
+      top: 2px;
+      width: 2px;
+      height: 4px;
+      background: #e6edf4;
+    }
+
+    .battery::before {
+      content: "";
+      position: absolute;
+      left: 2px;
+      top: 2px;
+      width: 7px;
+      height: 2px;
+      background: #0bd225;
+    }
+
+    .crumb {
+      margin-top: 22px;
+      color: #8f98a0;
+      font-size: 12px;
+    }
+
+    h1 {
+      margin: 28px 0 0;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+
+    .subline {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #aeb8c2;
+      font-size: 12px;
+    }
+
+    .progress-mini {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--blue);
+      font-size: 12px;
+    }
+
+    .progress-rail {
+      width: 74px;
+      height: 4px;
+      background: #18212b;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: var(--progress);
+      background: var(--blue);
+      border-radius: inherit;
+    }
+
+    .stepbar {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      min-height: 66px;
+      background: var(--track);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .step {
+      position: relative;
+      padding: 12px 6px 9px;
+      text-align: center;
+      color: #6d7984;
+      border-right: 1px solid rgba(255, 255, 255, 0.035);
+    }
+
+    .step:last-child {
+      border-right: 0;
+    }
+
+    .step.active {
+      color: var(--text);
+      background: var(--track-active);
+    }
+
+    .step.done {
+      color: #d8e3ec;
+    }
+
+    .step-label {
+      min-height: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .step-label .marker {
+      color: var(--text);
+      margin-right: 2px;
+      font-size: 11px;
+    }
+
+    .angle {
+      margin-top: 8px;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .countdown {
+      position: absolute;
+      inset: 154px 0 auto;
+      height: 240px;
+      display: grid;
+      place-items: center;
+      font-size: 148px;
+      line-height: 1;
+      font-weight: 300;
+      color: #fff;
+      text-shadow: 0 0 36px rgba(0, 137, 255, 0.64);
+    }
+
+    .stage {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 210px;
+      bottom: 150px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .stage.calib,
+    .stage.done {
+      top: 172px;
+    }
+
+    .guide-orbit {
+      position: absolute;
+      left: 50%;
+      top: 42%;
+      width: 180px;
+      height: 180px;
+      border: 2px dashed rgba(210, 220, 232, 0.2);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .angle-line {
+      position: absolute;
+      left: 51%;
+      bottom: 102px;
+      width: 2px;
+      height: 145px;
+      background: repeating-linear-gradient(to bottom, var(--orange) 0 4px, transparent 4px 8px);
+      transform-origin: bottom center;
+      transform: rotate(var(--angle-line, 0deg));
+      opacity: var(--line-opacity, 0);
+    }
+
+    .person {
+      position: relative;
+      width: 128px;
+      height: 270px;
+      filter: drop-shadow(0 8px 18px rgba(152, 183, 255, 0.18));
+    }
+
+    .head {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 34px;
+      height: 46px;
+      transform: translateX(-50%);
+      border-radius: 50% 50% 44% 44%;
+      background: linear-gradient(145deg, #eef4ff, #aebbe5 70%, #7f91c7);
+    }
+
+    .torso {
+      position: absolute;
+      top: 43px;
+      left: 50%;
+      width: 72px;
+      height: 110px;
+      transform: translateX(-50%);
+      border-radius: 28px 28px 24px 24px;
+      background: linear-gradient(145deg, #edf4ff, #b8c5ec 68%, #8092c5);
+    }
+
+    .arm,
+    .leg {
+      position: absolute;
+      transform-origin: top center;
+      border-radius: 999px;
+      background: linear-gradient(145deg, #eef5ff, #aebce8 72%, #7f90c5);
+    }
+
+    .arm {
+      top: 60px;
+      width: 17px;
+      height: 118px;
+    }
+
+    .arm.left {
+      left: 19px;
+      transform: rotate(var(--left-arm, 10deg));
+    }
+
+    .arm.right {
+      right: 19px;
+      transform: rotate(var(--right-arm, -10deg));
+    }
+
+    .leg {
+      top: 145px;
+      width: 21px;
+      height: 126px;
+    }
+
+    .leg.left {
+      left: 42px;
+      transform: rotate(5deg);
+    }
+
+    .leg.right {
+      right: 42px;
+      transform: rotate(-5deg);
+    }
+
+    .success {
+      position: absolute;
+      top: 108px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #031003;
+      font-size: 30px;
+      font-weight: 800;
+      background: var(--green);
+      opacity: var(--success-opacity, 0);
+    }
+
+    .success.left {
+      left: 14px;
+    }
+
+    .success.right {
+      right: 14px;
+    }
+
+    .demo-card {
+      position: absolute;
+      right: 0;
+      bottom: 12px;
+      width: 118px;
+      min-height: 74px;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(38, 48, 56, 0.88);
+      color: #d7e0e8;
+      font-size: 12px;
+      line-height: 1.45;
+      opacity: var(--demo-opacity, 1);
+    }
+
+    .demo-card b {
+      display: block;
+      margin-bottom: 6px;
+      color: #fff;
+      font-size: 13px;
+    }
+
+    .hint {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 50px;
+      min-height: 108px;
+      padding: 34px 18px 18px;
+      border-radius: 8px;
+      background: var(--panel);
+      color: #e7e8ea;
+      font-size: 14px;
+      line-height: 1.75;
+    }
+
+    .info {
+      position: absolute;
+      left: 18px;
+      top: -18px;
+      width: 41px;
+      height: 35px;
+      display: grid;
+      place-items: center;
+      border-radius: 4px;
+      background: var(--blue);
+      color: #fff;
+      font-size: 23px;
+      font-weight: 700;
+      font-family: Arial, sans-serif;
+    }
+
+    .hint-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      margin-top: 9px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: var(--orange);
+    }
+
+    .bottom-progress {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: center;
+      color: #8d98a1;
+      font-size: 10px;
+    }
+
+    .bottom-progress strong {
+      color: var(--orange);
+      font-weight: 500;
+    }
+
+    .bottom-rail {
+      width: 100%;
+      height: 5px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #10161d;
+    }
+
+    .bottom-fill {
+      height: 100%;
+      width: var(--bottom-progress, 0%);
+      border-radius: inherit;
+      background: var(--blue);
+    }
+
+    .summary {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 192px;
+      padding: 18px 12px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      border-radius: 8px;
+      background: var(--track);
+    }
+
+    .summary div {
+      padding: 12px 8px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      text-align: center;
+      font-size: 13px;
+      color: #dfe6ef;
+    }
+
+    .summary span {
+      display: block;
+      margin-top: 8px;
+      color: var(--blue);
+      font-size: 15px;
+    }
+
+    .done-text {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      top: 402px;
+      text-align: center;
+      font-size: 16px;
+      color: #f2f6fb;
+    }
+
+    .done-actions {
+      position: absolute;
+      left: 70px;
+      right: 70px;
+      bottom: 96px;
+      display: flex;
+      justify-content: space-between;
+      color: #dce5ef;
+      font-size: 14px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    button {
+      min-width: 88px;
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      background: #0b83ee;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #2b333b;
+    }
+
+    .state-name {
+      width: 100%;
+      text-align: center;
+      color: #55606a;
+      font-size: 13px;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <main class="device" aria-label="肩部合并测量设备界面">
+    <section class="screen" id="screen">
+      <div class="status">
+        <span>18:32</span>
+        <div class="icons" aria-hidden="true">
+          <span class="icon"></span>
+          <span class="icon"></span>
+          <span class="icon"></span>
+          <span class="battery"></span>
+        </div>
+      </div>
+
+      <div class="crumb" id="crumb">肩部功能</div>
+      <h1 id="title">肩部合并测量</h1>
+      <div class="subline" id="subline">
+        <span id="stateLabel">校准中...</span>
+        <span class="progress-mini">
+          <span class="progress-rail"><span class="progress-fill"></span></span>
+          <span id="progressText">--</span>
+        </span>
+      </div>
+
+      <div class="stepbar" id="stepbar" aria-label="测量步骤">
+        <div class="step" data-step="0">
+          <div class="step-label">外展上举-左</div>
+          <div class="angle">--</div>
+        </div>
+        <div class="step" data-step="1">
+          <div class="step-label">外展上举-右</div>
+          <div class="angle">--</div>
+        </div>
+        <div class="step" data-step="2">
+          <div class="step-label">前屈上举-左</div>
+          <div class="angle">--</div>
+        </div>
+        <div class="step" data-step="3">
+          <div class="step-label">前屈上举-右</div>
+          <div class="angle">--</div>
+        </div>
+      </div>
+
+      <div class="countdown" id="countdown" hidden>3</div>
+
+      <div class="stage" id="stage">
+        <div class="guide-orbit"></div>
+        <div class="angle-line"></div>
+        <div class="success left">✓</div>
+        <div class="success right">✓</div>
+        <div class="person" id="person">
+          <div class="head"></div>
+          <div class="torso"></div>
+          <div class="arm left"></div>
+          <div class="arm right"></div>
+          <div class="leg left"></div>
+          <div class="leg right"></div>
+        </div>
+        <div class="demo-card" id="demoCard">
+          <b>示范</b>
+          <span id="demoText">双臂自然下垂</span>
+        </div>
+      </div>
+
+      <div class="summary" id="summary" hidden>
+        <div>外展上举-左<span>164.5°</span></div>
+        <div>外展上举-右<span>170.0°</span></div>
+        <div>前屈上举-左<span>177.0°</span></div>
+        <div>前屈上举-右<span>179.5°</span></div>
+      </div>
+      <div class="done-text" id="doneText" hidden>本次肩部测量已全部完成</div>
+      <div class="done-actions" id="doneActions" hidden>
+        <span>[ 返回 ]</span>
+        <span>[ 下一项 ]</span>
+      </div>
+
+      <div class="hint" id="hint">
+        <div class="info">i</div>
+        <div class="hint-row">
+          <span class="dot"></span>
+          <span id="hintText">请面向屏幕，双脚站稳，双臂自然下垂。</span>
+        </div>
+      </div>
+
+      <div class="bottom-progress" id="bottomProgress">
+        <div><strong>30</strong> 秒后将结束测量</div>
+        <div class="bottom-rail"><div class="bottom-fill"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="controls" aria-label="Demo 控制">
+    <button type="button" class="secondary" id="prevBtn">上一步</button>
+    <button type="button" id="nextBtn">下一步</button>
+    <button type="button" class="secondary" id="resetBtn">重置</button>
+    <div class="state-name" id="stateName">SH_CALIB</div>
+  </nav>
+
+  <script>
+    const states = [
+      {
+        id: "SH_CALIB",
+        title: "肩部合并测量",
+        stateLabel: "校准中...",
+        progressText: "--",
+        active: 0,
+        values: ["--", "--", "--", "--"],
+        hint: "请面向屏幕，双脚站稳，双臂自然下垂。",
+        pose: "neutral",
+        demo: "双臂自然下垂",
+        bottom: false,
+        progress: 0
+      },
+      {
+        id: "SH_CD3",
+        title: "肩部合并测量",
+        stateLabel: "即将开始",
+        progressText: "--",
+        active: 0,
+        values: ["--", "--", "--", "--"],
+        hint: "请保持身体静止；倒计时结束后将测量外展上举-左。",
+        countdown: "3",
+        pose: "hidden",
+        demo: "",
+        bottom: false,
+        progress: 0
+      },
+      {
+        id: "SH_CD2",
+        title: "肩部合并测量",
+        stateLabel: "即将开始",
+        progressText: "--",
+        active: 0,
+        values: ["--", "--", "--", "--"],
+        hint: "请保持身体静止；倒计时结束后将测量外展上举-左。",
+        countdown: "2",
+        pose: "hidden",
+        demo: "",
+        bottom: false,
+        progress: 0
+      },
+      {
+        id: "SH_CD1",
+        title: "肩部合并测量",
+        stateLabel: "即将开始",
+        progressText: "--",
+        active: 0,
+        values: ["--", "--", "--", "--"],
+        hint: "请保持身体静止；倒计时结束后将测量外展上举-左。",
+        countdown: "1",
+        pose: "hidden",
+        demo: "",
+        bottom: false,
+        progress: 0
+      },
+      {
+        id: "SH_M1",
+        title: "肩部合并测量",
+        stateLabel: "测量中",
+        progressText: "1/4",
+        active: 0,
+        values: ["158.0°", "--", "--", "--"],
+        hint: "左手向左伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。",
+        pose: "leftAbduction",
+        demo: "外展上举-左循环",
+        bottom: true,
+        progress: 25
+      },
+      {
+        id: "SH_OK1",
+        title: "肩部合并测量",
+        stateLabel: "测量成功",
+        progressText: "1/4",
+        active: 0,
+        done: [0],
+        values: ["164.5°", "--", "--", "--"],
+        hint: "很好，请缓慢放下左手。",
+        pose: "leftAbduction",
+        success: "left",
+        demo: "外展上举-左",
+        bottom: false,
+        progress: 25
+      },
+      {
+        id: "SH_M2",
+        title: "肩部合并测量",
+        stateLabel: "测量中",
+        progressText: "2/4",
+        active: 1,
+        done: [0],
+        values: ["164.5°", "168.0°", "--", "--"],
+        hint: "右手向右伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。",
+        pose: "rightAbduction",
+        demo: "外展上举-右循环",
+        bottom: true,
+        progress: 50
+      },
+      {
+        id: "SH_OK2",
+        title: "肩部合并测量",
+        stateLabel: "测量成功",
+        progressText: "2/4",
+        active: 1,
+        done: [0, 1],
+        values: ["164.5°", "170.0°", "--", "--"],
+        hint: "很好，请缓慢放下右手。",
+        pose: "rightAbduction",
+        success: "right",
+        demo: "外展上举-右",
+        bottom: false,
+        progress: 50
+      },
+      {
+        id: "SH_TRANS",
+        title: "肩部合并测量",
+        stateLabel: "准备前屈上举",
+        progressText: "2/4",
+        active: 2,
+        done: [0, 1],
+        values: ["164.5°", "170.0°", "--", "--"],
+        hint: "外展上举测量已完成。接下来进入前屈上举测量，请将双臂自然下垂。",
+        pose: "neutral",
+        demo: "即将切换前屈上举",
+        bottom: false,
+        progress: 50
+      },
+      {
+        id: "SH_M3",
+        title: "肩部合并测量",
+        stateLabel: "测量中",
+        progressText: "3/4",
+        active: 2,
+        done: [0, 1],
+        values: ["164.5°", "170.0°", "132.0°", "--"],
+        hint: "左手向前伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。",
+        pose: "leftFlexion",
+        demo: "前屈上举-左循环",
+        bottom: true,
+        progress: 75
+      },
+      {
+        id: "SH_OK3",
+        title: "肩部合并测量",
+        stateLabel: "测量成功",
+        progressText: "3/4",
+        active: 2,
+        done: [0, 1, 2],
+        values: ["164.5°", "170.0°", "177.0°", "--"],
+        hint: "很好，请缓慢放下左手。",
+        pose: "leftFlexion",
+        success: "left",
+        demo: "前屈上举-左",
+        bottom: false,
+        progress: 75
+      },
+      {
+        id: "SH_M4",
+        title: "肩部合并测量",
+        stateLabel: "测量中",
+        progressText: "4/4",
+        active: 3,
+        done: [0, 1, 2],
+        values: ["164.5°", "170.0°", "177.0°", "175.0°"],
+        hint: "右手向前伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。",
+        pose: "rightFlexion",
+        demo: "前屈上举-右循环",
+        bottom: true,
+        progress: 100
+      },
+      {
+        id: "SH_OK4",
+        title: "肩部合并测量",
+        stateLabel: "测量成功",
+        progressText: "4/4",
+        active: 3,
+        done: [0, 1, 2, 3],
+        values: ["164.5°", "170.0°", "177.0°", "179.5°"],
+        hint: "很好，请缓慢放下右手。",
+        pose: "rightFlexion",
+        success: "right",
+        demo: "前屈上举-右",
+        bottom: false,
+        progress: 100
+      },
+      {
+        id: "SH_DONE",
+        title: "肩部合并测量",
+        stateLabel: "已完成",
+        progressText: "4/4",
+        active: -1,
+        done: [0, 1, 2, 3],
+        values: ["164.5°", "170.0°", "177.0°", "179.5°"],
+        hint: "",
+        pose: "done",
+        bottom: false,
+        progress: 100
+      }
+    ];
+
+    const stepNames = ["外展上举-左", "外展上举-右", "前屈上举-左", "前屈上举-右"];
+    const poseStyles = {
+      neutral: {
+        leftArm: "10deg",
+        rightArm: "-10deg",
+        line: "0",
+        lineOpacity: 0,
+        stageClass: "calib"
+      },
+      leftAbduction: {
+        leftArm: "-148deg",
+        rightArm: "-10deg",
+        line: "-24deg",
+        lineOpacity: 1
+      },
+      rightAbduction: {
+        leftArm: "10deg",
+        rightArm: "148deg",
+        line: "24deg",
+        lineOpacity: 1
+      },
+      leftFlexion: {
+        leftArm: "-172deg",
+        rightArm: "-10deg",
+        line: "-5deg",
+        lineOpacity: 1
+      },
+      rightFlexion: {
+        leftArm: "10deg",
+        rightArm: "172deg",
+        line: "5deg",
+        lineOpacity: 1
+      }
+    };
+
+    let index = 0;
+
+    const els = {
+      screen: document.getElementById("screen"),
+      title: document.getElementById("title"),
+      stateLabel: document.getElementById("stateLabel"),
+      progressText: document.getElementById("progressText"),
+      stepbar: document.getElementById("stepbar"),
+      steps: [...document.querySelectorAll(".step")],
+      countdown: document.getElementById("countdown"),
+      stage: document.getElementById("stage"),
+      person: document.getElementById("person"),
+      demoCard: document.getElementById("demoCard"),
+      demoText: document.getElementById("demoText"),
+      hint: document.getElementById("hint"),
+      hintText: document.getElementById("hintText"),
+      bottomProgress: document.getElementById("bottomProgress"),
+      summary: document.getElementById("summary"),
+      doneText: document.getElementById("doneText"),
+      doneActions: document.getElementById("doneActions"),
+      prevBtn: document.getElementById("prevBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      stateName: document.getElementById("stateName")
+    };
+
+    function render() {
+      const state = states[index];
+      const isCountdown = Boolean(state.countdown);
+      const isDone = state.id === "SH_DONE";
+
+      els.title.textContent = state.title;
+      els.stateLabel.textContent = state.stateLabel;
+      els.progressText.textContent = state.progressText;
+      els.stateName.textContent = state.id;
+      document.documentElement.style.setProperty("--progress", `${state.progress}%`);
+      document.documentElement.style.setProperty("--bottom-progress", `${Math.max(18, state.progress)}%`);
+
+      els.countdown.hidden = !isCountdown;
+      els.countdown.textContent = state.countdown || "";
+      els.stage.hidden = isCountdown || isDone;
+      els.stepbar.hidden = isCountdown ? false : isDone;
+      els.hint.hidden = isDone;
+      els.bottomProgress.hidden = !state.bottom;
+      els.summary.hidden = !isDone;
+      els.doneText.hidden = !isDone;
+      els.doneActions.hidden = !isDone;
+
+      els.steps.forEach((step, i) => {
+        step.classList.toggle("active", state.active === i);
+        step.classList.toggle("done", (state.done || []).includes(i));
+        const label = step.querySelector(".step-label");
+        const angle = step.querySelector(".angle");
+        const prefix = state.active === i ? "<span class=\"marker\">●&gt;&gt;</span>" : "";
+        const suffix = (state.done || []).includes(i) ? " ✓" : "";
+        label.innerHTML = `${prefix}${stepNames[i]}${suffix}`;
+        angle.textContent = state.values[i];
+      });
+
+      els.hintText.textContent = state.hint;
+      els.demoText.textContent = state.demo || "";
+      els.demoCard.hidden = !state.demo;
+
+      els.stage.className = "stage";
+      document.documentElement.style.setProperty("--success-opacity", "0");
+      document.querySelector(".success.left").style.opacity = state.success === "left" ? "1" : "0";
+      document.querySelector(".success.right").style.opacity = state.success === "right" ? "1" : "0";
+
+      const pose = poseStyles[state.pose] || poseStyles.neutral;
+      if (pose.stageClass) {
+        els.stage.classList.add(pose.stageClass);
+      }
+      document.documentElement.style.setProperty("--left-arm", pose.leftArm);
+      document.documentElement.style.setProperty("--right-arm", pose.rightArm);
+      document.documentElement.style.setProperty("--angle-line", pose.line);
+      document.documentElement.style.setProperty("--line-opacity", pose.lineOpacity);
+
+      els.prevBtn.disabled = index === 0;
+      els.nextBtn.textContent = index === states.length - 1 ? "已完成" : "下一步";
+      els.nextBtn.disabled = index === states.length - 1;
+    }
+
+    els.prevBtn.addEventListener("click", () => {
+      index = Math.max(0, index - 1);
+      render();
+    });
+
+    els.nextBtn.addEventListener("click", () => {
+      index = Math.min(states.length - 1, index + 1);
+      render();
+    });
+
+    els.resetBtn.addEventListener("click", () => {
+      index = 0;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
