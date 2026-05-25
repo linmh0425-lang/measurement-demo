@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $Git = "D:\Git\cmd\git.exe"
 $Repo = Split-Path -Parent $MyInvocation.MyCommand.Path
+$Proxy = "http://127.0.0.1:7897"
 
 Write-Host ""
 Write-Host "========================================"
@@ -18,33 +19,40 @@ if (!(Test-Path -LiteralPath $Git)) {
 
 Set-Location -LiteralPath $Repo
 
+$env:HTTP_PROXY = $Proxy
+$env:HTTPS_PROXY = $Proxy
+$env:ALL_PROXY = $Proxy
+$env:GIT_HTTP_PROXY = $Proxy
+$env:GIT_HTTPS_PROXY = $Proxy
+
 Write-Host "Repository:"
 Write-Host $Repo
 Write-Host ""
 
 Write-Host "Current status:"
-& $Git status --short --branch
+& $Git -c http.sslBackend=openssl -c http.version=HTTP/1.1 status --short --branch
 Write-Host ""
 
 Write-Host "Staging all changes..."
-& $Git add .
+& $Git -c http.sslBackend=openssl -c http.version=HTTP/1.1 add .
 
 Write-Host ""
 Write-Host "Checking whether a new commit is needed..."
-& $Git diff --cached --quiet
+& $Git -c http.sslBackend=openssl -c http.version=HTTP/1.1 diff --cached --quiet
 $HasStagedChanges = $LASTEXITCODE -ne 0
 
 if ($HasStagedChanges) {
   $CommitMessage = "update measurement demo"
   Write-Host "Creating commit: $CommitMessage"
-  & $Git commit -m $CommitMessage
+  & $Git -c http.sslBackend=openssl -c http.version=HTTP/1.1 commit -m $CommitMessage
 } else {
   Write-Host "No new file changes to commit."
 }
 
 Write-Host ""
 Write-Host "Pushing to GitHub..."
-& $Git push
+& $Git -c http.sslBackend=openssl -c http.version=HTTP/1.1 pull --rebase origin main
+& $Git -c http.sslBackend=openssl -c http.version=HTTP/1.1 push
 
 Write-Host ""
 Write-Host "========================================"
