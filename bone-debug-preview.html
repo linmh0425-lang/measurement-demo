@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>骨骼调试预览</title>
+  <style>
+    :root {
+      --bg: #050607;
+      --panel: #151d24;
+      --panel-2: #0d1319;
+      --line: rgba(0, 148, 255, .36);
+      --blue: #008cff;
+      --cyan: #22c8ff;
+      --text: #eef4fb;
+      --muted: #8ea0af;
+      --orange: #ff9800;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #dfe3e8;
+      font-family: "Microsoft YaHei", Arial, sans-serif;
+      color: var(--text);
+      display: grid;
+      place-items: center;
+    }
+
+    .app {
+      width: min(1180px, calc(100vw - 28px));
+      height: min(760px, calc(100vh - 28px));
+      display: grid;
+      grid-template-columns: minmax(420px, 1fr) 380px;
+      gap: 14px;
+      background: var(--bg);
+      border: 1px solid #1a1f24;
+      box-shadow: 0 22px 60px rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+
+    .stage {
+      position: relative;
+      min-width: 0;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(0, 132, 255, .14), transparent 28%),
+        linear-gradient(180deg, #030405, #07090b);
+    }
+
+    .topbar {
+      position: absolute;
+      top: 24px;
+      left: 28px;
+      right: 28px;
+      z-index: 5;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status {
+      max-width: 360px;
+      color: var(--cyan);
+      font-size: 12px;
+      text-align: right;
+      line-height: 1.5;
+    }
+
+    #viewer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .axis-note {
+      position: absolute;
+      left: 28px;
+      right: 28px;
+      bottom: 24px;
+      z-index: 4;
+      display: grid;
+      gap: 8px;
+      padding: 16px 18px;
+      border-radius: 8px;
+      background: rgba(21, 29, 36, .9);
+      color: #dfe8f1;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .axis-note strong { color: var(--orange); }
+
+    aside {
+      min-width: 0;
+      padding: 22px 18px;
+      background: var(--panel-2);
+      border-left: 1px solid rgba(255,255,255,.06);
+      overflow: auto;
+    }
+
+    .section {
+      padding: 14px;
+      border: 1px solid rgba(0, 148, 255, .22);
+      border-radius: 8px;
+      background: rgba(21, 29, 36, .78);
+      margin-bottom: 12px;
+    }
+
+    .section h2 {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .row {
+      display: grid;
+      gap: 7px;
+      margin-top: 10px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    select, input[type="file"] {
+      width: 100%;
+      color: var(--text);
+      background: #0b1015;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 6px;
+      padding: 9px 10px;
+      outline: 0;
+    }
+
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .check-row input {
+      accent-color: var(--blue);
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 54px;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .slider-row output {
+      color: var(--cyan);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .action-grid button.active {
+      color: #fff;
+      border-color: rgba(34, 200, 255, .95);
+      background: rgba(0, 148, 255, .34);
+      box-shadow: inset 0 0 0 1px rgba(34, 200, 255, .18), 0 0 18px rgba(0, 148, 255, .2);
+    }
+
+    details {
+      border: 1px solid rgba(0, 148, 255, .22);
+      border-radius: 8px;
+      background: rgba(21, 29, 36, .78);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    summary {
+      padding: 14px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    details .section {
+      margin: 0;
+      border: 0;
+      border-top: 1px solid rgba(255,255,255,.06);
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .readout {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #080c10;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .readout b { color: var(--cyan); }
+
+    button {
+      border: 1px solid rgba(0, 148, 255, .38);
+      border-radius: 6px;
+      padding: 9px 8px;
+      color: var(--text);
+      background: rgba(0, 132, 255, .14);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    button:hover { background: rgba(0, 132, 255, .24); }
+    button.warn { border-color: rgba(255, 152, 0, .45); background: rgba(255, 152, 0, .12); }
+
+    .bone-list {
+      max-height: 130px;
+      overflow: auto;
+      padding: 8px;
+      border-radius: 6px;
+      background: #080c10;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.7;
+      word-break: break-all;
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        height: auto;
+        min-height: calc(100vh - 28px);
+        grid-template-columns: 1fr;
+      }
+      .stage { height: 560px; }
+    }
+  </style>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <main class="app">
+    <section class="stage">
+      <div class="topbar">
+        <div>
+          <h1>骨骼调试预览</h1>
+          <div class="subtitle">验证肩部、颈部骨骼旋转方向</div>
+        </div>
+        <div class="status" id="status">正在加载模型...</div>
+      </div>
+      <canvas id="viewer"></canvas>
+      <div class="axis-note">
+        <div><strong>使用方式：</strong>优先用右侧“测量动作库”，不用在骨骼列表里找点。</div>
+        <div>如果动作方向不对，再展开高级骨骼调试微调轴向。</div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="section">
+        <h2>模型文件</h2>
+        <div class="row">
+          <label>默认加载：assets/shoulder-angle-model.glb</label>
+          <input id="fileInput" type="file" accept=".glb,.gltf" />
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>内置动画</h2>
+        <div class="row">
+          <select id="clipSelect"></select>
+        </div>
+        <div class="buttons row">
+          <button id="playClip">播放选中动画</button>
+          <button id="stopClip" class="warn">停止动画</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>测量动作库</h2>
+        <div class="action-grid">
+          <button data-action="shoulder-abduction-left">肩部：左外展</button>
+          <button data-action="shoulder-abduction-right">肩部：右外展</button>
+          <button data-action="shoulder-flexion-left">肩部：左前屈</button>
+          <button data-action="shoulder-flexion-right">肩部：右前屈</button>
+          <button data-action="neck-flexion">颈部：前屈</button>
+          <button data-action="neck-extension">颈部：后伸</button>
+          <button data-action="neck-left-bend">颈部：左侧屈</button>
+          <button data-action="neck-right-bend">颈部：右侧屈</button>
+          <button data-action="neck-left-rotate">颈部：左旋转</button>
+          <button data-action="neck-right-rotate">颈部：右旋转</button>
+        </div>
+        <div class="slider-row">
+          <span>幅度</span>
+          <input id="actionAmount" type="range" min="0" max="100" value="100" step="1" />
+          <output id="actionAmountOut">100%</output>
+        </div>
+        <div class="row">
+          <label>轴向方案</label>
+          <select id="axisPlan">
+            <option value="A">方案 A：X 轴为主</option>
+            <option value="B">方案 B：Y 轴为主</option>
+            <option value="C">方案 C：Z 轴为主</option>
+            <option value="D">方案 D：组合轴</option>
+          </select>
+        </div>
+        <div class="buttons row">
+          <button id="playAction">播放动作过程</button>
+          <button id="resetAction" class="warn">回到自然站立</button>
+        </div>
+        <div class="readout" id="actionReadout">请选择一个测量动作。</div>
+        <label class="check-row">
+          <input id="showSkeleton" type="checkbox" />
+          显示骨架线，辅助判断骨骼是否在动
+        </label>
+      </div>
+
+      <details>
+        <summary>高级骨骼手动调试</summary>
+        <div class="section">
+        <div class="row">
+          <label>骨骼</label>
+          <select id="boneSelect"></select>
+        </div>
+        <div class="slider-row">
+          <span>X</span>
+          <input id="rotX" type="range" min="-180" max="180" value="0" step="1" />
+          <output id="outX">0°</output>
+        </div>
+        <div class="slider-row">
+          <span>Y</span>
+          <input id="rotY" type="range" min="-180" max="180" value="0" step="1" />
+          <output id="outY">0°</output>
+        </div>
+        <div class="slider-row">
+          <span>Z</span>
+          <input id="rotZ" type="range" min="-180" max="180" value="0" step="1" />
+          <output id="outZ">0°</output>
+        </div>
+        <div class="buttons row">
+          <button id="applyZero">当前骨骼归零</button>
+          <button id="resetPose" class="warn">全身复位</button>
+        </div>
+        </div>
+      </details>
+
+      <div class="section">
+        <h2>检测到的关键骨骼</h2>
+        <div class="bone-list" id="boneList">等待模型加载...</div>
+      </div>
+    </aside>
+  </main>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+    const canvas = document.getElementById("viewer");
+    const statusEl = document.getElementById("status");
+    const boneSelect = document.getElementById("boneSelect");
+    const clipSelect = document.getElementById("clipSelect");
+    const boneList = document.getElementById("boneList");
+    const sliders = {
+      x: document.getElementById("rotX"),
+      y: document.getElementById("rotY"),
+      z: document.getElementById("rotZ")
+    };
+    const outs = {
+      x: document.getElementById("outX"),
+      y: document.getElementById("outY"),
+      z: document.getElementById("outZ")
+    };
+    const actionAmount = document.getElementById("actionAmount");
+    const actionAmountOut = document.getElementById("actionAmountOut");
+    const axisPlan = document.getElementById("axisPlan");
+    const actionReadout = document.getElementById("actionReadout");
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050607);
+
+    const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
+    camera.position.set(0, 1.55, 4.2);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.05, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+
+    scene.add(new THREE.HemisphereLight(0xeaf3ff, 0x15202a, 2.2));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.8);
+    keyLight.position.set(2.6, 4.5, 3.2);
+    scene.add(keyLight);
+    const rimLight = new THREE.DirectionalLight(0x3aa8ff, 1.6);
+    rimLight.position.set(-3, 2.2, -2);
+    scene.add(rimLight);
+
+    const grid = new THREE.GridHelper(2.4, 12, 0x12324a, 0x0b1e2c);
+    grid.position.y = 0;
+    scene.add(grid);
+
+    const loader = new GLTFLoader();
+    const clock = new THREE.Clock();
+    let model = null;
+    let mixer = null;
+    let activeAction = null;
+    let clips = [];
+    let bones = [];
+    let boneByName = new Map();
+    let baseRotations = new Map();
+    let skeletonHelper = null;
+    let selectedAction = "";
+    let actionTween = null;
+
+    const skinBones = {
+      leftUpper: ["DEF-shoulder.L", "DEF-upper_arm.L", "DEF-upper_arm.L.001"],
+      rightUpper: ["DEF-shoulder.R", "DEF-upper_arm.R", "DEF-upper_arm.R.001"],
+      leftForearm: ["DEF-forearm.L", "DEF-forearm.L.001", "DEF-hand.L"],
+      rightForearm: ["DEF-forearm.R", "DEF-forearm.R.001", "DEF-hand.R"],
+      neck: ["DEF-spine.004", "DEF-spine.005", "DEF-spine.006", "head"]
+    };
+
+    const actionConfigs = {
+      "shoulder-abduction-left": {
+        label: "肩部：左外展",
+        note: "左手从身体左侧向上展开，用于外展上举。",
+        group: "leftUpper",
+        forearmGroup: "leftForearm",
+        plans: {
+          A: [82, 0, 0],
+          B: [0, 82, 0],
+          C: [0, 0, 82],
+          D: [38, 0, 64]
+        }
+      },
+      "shoulder-abduction-right": {
+        label: "肩部：右外展",
+        note: "右手从身体右侧向上展开，用于外展上举。",
+        group: "rightUpper",
+        forearmGroup: "rightForearm",
+        plans: {
+          A: [82, 0, 0],
+          B: [0, -82, 0],
+          C: [0, 0, -82],
+          D: [38, 0, -64]
+        }
+      },
+      "shoulder-flexion-left": {
+        label: "肩部：左前屈",
+        note: "左手从身体前方向上抬起，用于前屈上举。",
+        group: "leftUpper",
+        forearmGroup: "leftForearm",
+        plans: {
+          A: [-82, 0, 0],
+          B: [0, -82, 0],
+          C: [0, 0, 82],
+          D: [-70, 18, 12]
+        }
+      },
+      "shoulder-flexion-right": {
+        label: "肩部：右前屈",
+        note: "右手从身体前方向上抬起，用于前屈上举。",
+        group: "rightUpper",
+        forearmGroup: "rightForearm",
+        plans: {
+          A: [-82, 0, 0],
+          B: [0, 82, 0],
+          C: [0, 0, -82],
+          D: [-70, -18, -12]
+        }
+      },
+      "neck-flexion": {
+        label: "颈部：前屈",
+        note: "低头，让下巴靠近胸口。",
+        group: "neck",
+        plans: { A: [24, 0, 0], B: [0, 24, 0], C: [0, 0, 24], D: [18, 0, 10] }
+      },
+      "neck-extension": {
+        label: "颈部：后伸",
+        note: "抬头后仰，到舒适的最大角度。",
+        group: "neck",
+        plans: { A: [-24, 0, 0], B: [0, -24, 0], C: [0, 0, -24], D: [-18, 0, -10] }
+      },
+      "neck-left-bend": {
+        label: "颈部：左侧屈",
+        note: "头部向左侧倾斜，让左耳靠近左肩。",
+        group: "neck",
+        plans: { A: [0, 0, 28], B: [0, 28, 0], C: [28, 0, 0], D: [0, 8, 24] }
+      },
+      "neck-right-bend": {
+        label: "颈部：右侧屈",
+        note: "头部向右侧倾斜，让右耳靠近右肩。",
+        group: "neck",
+        plans: { A: [0, 0, -28], B: [0, -28, 0], C: [-28, 0, 0], D: [0, -8, -24] }
+      },
+      "neck-left-rotate": {
+        label: "颈部：左旋转",
+        note: "头部向左转，看向左侧。",
+        group: "neck",
+        plans: { A: [0, 32, 0], B: [32, 0, 0], C: [0, 0, 32], D: [0, 28, 8] }
+      },
+      "neck-right-rotate": {
+        label: "颈部：右旋转",
+        note: "头部向右转，看向右侧。",
+        group: "neck",
+        plans: { A: [0, -32, 0], B: [-32, 0, 0], C: [0, 0, -32], D: [0, -28, -8] }
+      }
+    };
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / rect.height;
+      camera.updateProjectionMatrix();
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    function degToRad(v) {
+      return Number(v) * Math.PI / 180;
+    }
+
+    function radToDeg(v) {
+      return Math.round(v * 180 / Math.PI);
+    }
+
+    function resetSliders() {
+      sliders.x.value = 0;
+      sliders.y.value = 0;
+      sliders.z.value = 0;
+      updateOutputs();
+    }
+
+    function updateOutputs() {
+      outs.x.textContent = `${sliders.x.value}°`;
+      outs.y.textContent = `${sliders.y.value}°`;
+      outs.z.textContent = `${sliders.z.value}°`;
+    }
+
+    function selectedBone() {
+      return boneByName.get(boneSelect.value);
+    }
+
+    function applySelectedBoneRotation() {
+      const bone = selectedBone();
+      if (!bone) return;
+      const base = baseRotations.get(bone.uuid);
+      if (!base) return;
+      bone.rotation.set(
+        base.x + degToRad(sliders.x.value),
+        base.y + degToRad(sliders.y.value),
+        base.z + degToRad(sliders.z.value),
+        bone.rotation.order
+      );
+    }
+
+    function stopAnimation() {
+      if (activeAction) {
+        activeAction.stop();
+        activeAction = null;
+      }
+      if (mixer) mixer.stopAllAction();
+    }
+
+    function resetPose() {
+      stopAnimation();
+      if (actionTween) {
+        cancelAnimationFrame(actionTween);
+        actionTween = null;
+      }
+      for (const bone of bones) {
+        const base = baseRotations.get(bone.uuid);
+        if (base) bone.rotation.copy(base);
+      }
+      resetSliders();
+    }
+
+    function populateBones() {
+      const important = [
+        "DEF-upper_arm.L", "DEF-forearm.L", "DEF-hand.L",
+        "DEF-upper_arm.R", "DEF-forearm.R", "DEF-hand.R",
+        "ORG-upper_arm.L", "ORG-upper_arm.R",
+        "upper_arm_fk.L", "upper_arm_fk.R",
+        "neck", "head", "MCH-ROT-neck", "MCH-ROT-head"
+      ];
+      const ordered = [
+        ...important.map(name => boneByName.get(name)).filter(Boolean),
+        ...bones.filter(b => !important.includes(b.name))
+      ];
+      boneSelect.innerHTML = ordered.map(b => `<option value="${b.name}">${b.name}</option>`).join("");
+      boneSelect.value = boneByName.has("DEF-upper_arm.L") ? "DEF-upper_arm.L" : ordered[0]?.name || "";
+
+      const matching = bones
+        .filter(b => /upper_arm|forearm|hand|shoulder|neck|head/i.test(b.name))
+        .map(b => b.name);
+      boneList.innerHTML = matching.length ? matching.join("<br>") : "没有匹配到常见命名的关键骨骼";
+    }
+
+    function populateAnimations(gltf) {
+      clipSelect.innerHTML = gltf.animations.map((clip, i) => {
+        const name = clip.name || `Animation_${i + 1}`;
+        return `<option value="${i}">${i + 1}. ${name} (${clip.duration.toFixed(2)}s)</option>`;
+      }).join("");
+    }
+
+    function frameModel() {
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      model.position.x -= center.x;
+      model.position.z -= center.z;
+      model.position.y -= box.min.y;
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const scale = 2.45 / maxDim;
+      model.scale.setScalar(scale);
+      camera.position.set(0, 1.25, 4.2);
+      controls.target.set(0, 1.15, 0);
+      controls.update();
+    }
+
+    async function loadModel(url) {
+      setStatus("正在加载模型...");
+      if (model) {
+        scene.remove(model);
+        if (skeletonHelper) {
+          scene.remove(skeletonHelper);
+          skeletonHelper = null;
+        }
+        model.traverse(obj => {
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) {
+            if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+            else obj.material.dispose();
+          }
+        });
+      }
+      stopAnimation();
+      clips = [];
+      bones = [];
+      boneByName = new Map();
+      baseRotations = new Map();
+
+      const gltf = await loader.loadAsync(url);
+      model = gltf.scene;
+      scene.add(model);
+      model.traverse(obj => {
+        if (obj.isMesh) {
+          obj.frustumCulled = false;
+          obj.material = obj.material.clone();
+          obj.material.color?.set(0xdce8ff);
+          obj.material.roughness = 0.68;
+          obj.material.metalness = 0.02;
+        }
+        if (obj.isBone) {
+          obj.matrixAutoUpdate = true;
+          bones.push(obj);
+          boneByName.set(obj.name, obj);
+          baseRotations.set(obj.uuid, obj.rotation.clone());
+        }
+      });
+      skeletonHelper = new THREE.SkeletonHelper(model);
+      skeletonHelper.visible = document.getElementById("showSkeleton").checked;
+      skeletonHelper.material.depthTest = false;
+      skeletonHelper.material.opacity = 0.85;
+      skeletonHelper.material.transparent = true;
+      scene.add(skeletonHelper);
+
+      mixer = new THREE.AnimationMixer(model);
+      clips = gltf.animations || [];
+      populateBones();
+      populateAnimations(gltf);
+      frameModel();
+      setStatus(`已加载：${bones.length} 个骨骼，${gltf.animations.length} 段动画`);
+    }
+
+    function rotateBone(name, x = 0, y = 0, z = 0) {
+      const bone = boneByName.get(name);
+      if (!bone) return;
+      const base = baseRotations.get(bone.uuid);
+      if (!base) return;
+      bone.matrixAutoUpdate = true;
+      bone.rotation.set(base.x + degToRad(x), base.y + degToRad(y), base.z + degToRad(z), bone.rotation.order);
+      bone.updateMatrix();
+      bone.updateMatrixWorld(true);
+    }
+
+    function rotateBoneGroup(names, x = 0, y = 0, z = 0, amount = 1) {
+      const matched = [];
+      names.forEach((boneName, index) => {
+        if (!boneByName.has(boneName)) return;
+        const weight = index === 0 ? 0.45 : index === 1 ? 1 : 0.82;
+        rotateBone(boneName, x * weight * amount, y * weight * amount, z * weight * amount);
+        matched.push(boneName);
+      });
+      return matched;
+    }
+
+    function applyAction(name, amount = Number(actionAmount.value) / 100) {
+      const config = actionConfigs[name];
+      if (!config) return;
+      stopAnimation();
+      for (const bone of bones) {
+        const base = baseRotations.get(bone.uuid);
+        if (base) bone.rotation.copy(base);
+      }
+      const plan = config.plans[axisPlan.value] || config.plans.A;
+      let matched = [];
+      if (config.group) {
+        matched = matched.concat(rotateBoneGroup(skinBones[config.group] || [], plan[0], plan[1], plan[2], amount));
+      }
+      if (config.forearmGroup) {
+        matched = matched.concat(rotateBoneGroup(skinBones[config.forearmGroup] || [], plan[0] * 0.18, plan[1] * 0.18, plan[2] * 0.18, amount));
+      }
+      model?.updateMatrixWorld(true);
+      skeletonHelper?.updateMatrixWorld(true);
+      const usedBones = matched.join(" / ");
+      actionReadout.innerHTML = `<b>${config.label}</b><br>${config.note}<br>驱动骨骼：${usedBones || "未匹配到骨骼"}`;
+      setStatus(`当前动作：${config.label}，${axisPlan.value} 方案，幅度 ${Math.round(amount * 100)}%`);
+    }
+
+    function selectAction(name) {
+      selectedAction = name;
+      document.querySelectorAll("[data-action]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.action === name);
+      });
+      applyAction(name);
+    }
+
+    function playSelectedAction() {
+      if (!selectedAction) {
+        setStatus("请先选择一个测量动作");
+        return;
+      }
+      if (actionTween) cancelAnimationFrame(actionTween);
+      const duration = 900;
+      const target = Number(actionAmount.value) / 100;
+      const start = performance.now();
+      const tick = (now) => {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = 1 - Math.pow(1 - t, 3);
+        applyAction(selectedAction, target * eased);
+        if (t < 1) actionTween = requestAnimationFrame(tick);
+        else actionTween = null;
+      };
+      applyAction(selectedAction, 0);
+      actionTween = requestAnimationFrame(tick);
+    }
+
+    function resetAction() {
+      selectedAction = "";
+      document.querySelectorAll("[data-action]").forEach(btn => btn.classList.remove("active"));
+      actionReadout.textContent = "请选择一个测量动作。";
+      resetPose();
+      setStatus("已回到自然站立");
+    }
+
+    function preset(name) {
+      resetPose();
+      const map = {
+        "left-abd": () => rotateBone("DEF-upper_arm.L", 0, 0, 72),
+        "right-abd": () => rotateBone("DEF-upper_arm.R", 0, 0, -72),
+        "left-flex": () => rotateBone("DEF-upper_arm.L", -74, 0, 0),
+        "right-flex": () => rotateBone("DEF-upper_arm.R", -74, 0, 0),
+        "neck-left": () => rotateBone("head", 0, 32, 0),
+        "neck-right": () => rotateBone("head", 0, -32, 0)
+      };
+      map[name]?.();
+      setStatus(`已应用预设：${name}。如果方向不对，用滑块找正确轴。`);
+    }
+
+    for (const key of ["x", "y", "z"]) {
+      sliders[key].addEventListener("input", () => {
+        updateOutputs();
+        applySelectedBoneRotation();
+      });
+    }
+
+    actionAmount.addEventListener("input", () => {
+      actionAmountOut.textContent = `${actionAmount.value}%`;
+      if (selectedAction) applyAction(selectedAction);
+    });
+    axisPlan.addEventListener("change", () => {
+      if (selectedAction) applyAction(selectedAction);
+    });
+    document.querySelectorAll("[data-action]").forEach(btn => {
+      btn.addEventListener("click", () => selectAction(btn.dataset.action));
+    });
+    document.getElementById("playAction").addEventListener("click", playSelectedAction);
+    document.getElementById("resetAction").addEventListener("click", resetAction);
+    document.getElementById("showSkeleton").addEventListener("change", (event) => {
+      if (skeletonHelper) skeletonHelper.visible = event.target.checked;
+    });
+    boneSelect.addEventListener("change", resetSliders);
+    document.getElementById("applyZero").addEventListener("click", () => {
+      const bone = selectedBone();
+      if (!bone) return;
+      const base = baseRotations.get(bone.uuid);
+      if (base) bone.rotation.copy(base);
+      resetSliders();
+    });
+    document.getElementById("resetPose").addEventListener("click", resetPose);
+    document.querySelectorAll("[data-preset]").forEach(btn => {
+      btn.addEventListener("click", () => preset(btn.dataset.preset));
+    });
+    document.getElementById("playClip").addEventListener("click", () => {
+      if (!mixer || !model) return;
+      resetPose();
+      const index = Number(clipSelect.value || 0);
+      const selected = clips[index];
+      if (!selected) return;
+      activeAction = mixer.clipAction(selected);
+      activeAction.reset().setLoop(THREE.LoopRepeat).play();
+      setStatus(`播放动画：${selected.name || index + 1}`);
+    });
+    document.getElementById("stopClip").addEventListener("click", () => {
+      stopAnimation();
+      setStatus("已停止动画");
+    });
+    document.getElementById("fileInput").addEventListener("change", async (event) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      await loadModel(URL.createObjectURL(file));
+    });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    loadModel("./assets/shoulder-angle-model.glb").catch(error => {
+      console.error(error);
+      setStatus("默认模型加载失败。请用右侧文件选择器手动选择 GLB，或使用本地服务打开此页。");
+    });
+  </script>
+</body>
+</html>

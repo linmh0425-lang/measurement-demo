@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>肩颈测量交互 Demo</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
   <style>
     :root {
       --black: #050607;
@@ -261,8 +262,111 @@
     }
 
     .stepbar.shoulder-stagebar {
-      grid-template-columns: repeat(2, 1fr);
-      min-height: 52px;
+      position: relative;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      min-height: 66px;
+      overflow: visible;
+    }
+
+    .stepbar.shoulder-stagebar .step {
+      display: grid;
+      place-items: center;
+      min-width: 0;
+      padding: 10px 8px 8px;
+    }
+
+    .stepbar.shoulder-stagebar .step .label {
+      width: 100%;
+      overflow: visible;
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 0;
+    }
+
+    .stepbar.shoulder-stagebar .mark {
+      margin-right: 1px;
+      font-size: 9px;
+    }
+
+    .shoulder-flexion-ref {
+      position: absolute;
+      right: 8px;
+      top: calc(100% + 8px);
+      width: 112px;
+      min-height: 82px;
+      padding: 8px 8px 9px;
+      border: 1px solid rgba(0, 148, 255, .55);
+      border-radius: 8px;
+      background: rgba(12, 24, 34, .94);
+      box-shadow: 0 0 18px rgba(0, 148, 255, .18);
+      z-index: 7;
+      color: #dce5ed;
+      font-size: 10px;
+      line-height: 1.25;
+      pointer-events: none;
+    }
+
+    .shoulder-flexion-ref b {
+      display: block;
+      margin-bottom: 2px;
+      color: #fff;
+      font-size: 12px;
+    }
+
+    .shoulder-flexion-ref .motion-stick {
+      width: 82px;
+      height: 54px;
+      margin: 0 auto 2px;
+    }
+
+    .shoulder-flexion-ref .caption {
+      text-align: center;
+      color: rgba(236, 245, 255, .86);
+    }
+
+    .stepbar.neck-stagebar {
+      grid-template-columns: repeat(3, 1fr);
+      position: relative;
+      overflow: visible;
+    }
+
+    .neck-action-ref {
+      position: absolute;
+      right: 6px;
+      bottom: -48px;
+      width: 92px;
+      height: 38px;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 7px;
+      border: 1px solid rgba(0, 148, 255, .55);
+      border-radius: 6px;
+      background: rgba(8, 18, 27, .92);
+      color: rgba(236, 245, 255, .94);
+      font-size: 10px;
+      line-height: 1.2;
+      z-index: 4;
+      box-shadow: 0 0 16px rgba(0, 148, 255, .16);
+    }
+
+    .neck-action-ref svg {
+      width: 28px;
+      height: 28px;
+    }
+
+    .neck-action-ref path,
+    .neck-action-ref circle {
+      fill: none;
+      stroke: #11a8ff;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .neck-action-ref .head {
+      fill: rgba(180, 206, 255, .22);
     }
 
     .step {
@@ -342,6 +446,35 @@
       bottom: 164px;
     }
 
+    .stage.neck-stage.glb-stage {
+      top: 270px;
+      bottom: 184px;
+      place-items: center;
+      overflow: visible;
+    }
+
+    .stage.reference-stage {
+      top: 242px;
+      bottom: 244px;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .stage.shoulder-reference-stage {
+      top: 252px;
+      bottom: 176px;
+    }
+
+    .stage.neck-stage.reference-stage {
+      top: 272px;
+      bottom: 184px;
+    }
+
+    .stage.neck-stage.reference-stage.return-reference {
+      top: 272px;
+      bottom: 184px;
+    }
+
     .stage.apose-stage {
       top: 142px;
       bottom: 150px;
@@ -358,6 +491,112 @@
       bottom: 210px;
       display: grid;
       place-items: center;
+    }
+
+    .reference-visual {
+      position: relative;
+      width: min(100%, 286px);
+      height: 100%;
+      display: grid;
+      place-items: center;
+      filter: drop-shadow(0 12px 30px rgba(0, 132, 255, .16));
+    }
+
+    .reference-visual img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 2px;
+    }
+
+    .stage.neck-stage .reference-visual {
+      width: min(100%, 340px);
+      height: 100%;
+    }
+
+    .stage.neck-stage.return-reference .reference-visual {
+      width: min(100%, 300px);
+      height: 100%;
+    }
+
+    .stage.neck-stage.return-reference .reference-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
+    }
+
+    .stage.shoulder-reference-stage .reference-visual {
+      width: min(100%, 382px);
+      height: 100%;
+    }
+
+    .stage.shoulder-reference-stage .reference-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center center;
+    }
+
+    .neck-glb-wrap {
+      position: relative;
+      width: min(100%, 310px);
+      height: 100%;
+      min-height: 250px;
+      display: grid;
+      place-items: center;
+      overflow: visible;
+      filter: drop-shadow(0 18px 38px rgba(92, 145, 255, .18));
+    }
+
+    .neck-glb-viewer {
+      width: 100%;
+      height: 100%;
+      min-height: 250px;
+      background: transparent;
+      --poster-color: transparent;
+    }
+
+    .neck-glb-wrap .orbit {
+      width: 196px;
+      height: 196px;
+      top: 46%;
+      opacity: .9;
+      pointer-events: none;
+    }
+
+    .neck-glb-wrap .angle-line {
+      pointer-events: none;
+      top: 46%;
+    }
+
+    .neck-glb-wrap .angle-text {
+      top: 42%;
+      pointer-events: none;
+    }
+
+    .neck-glb-wrap .angle-text.left {
+      left: 18px;
+    }
+
+    .neck-glb-wrap .angle-text.right {
+      right: 18px;
+    }
+
+    .neck-glb-wrap .neck-cue {
+      top: 16px;
+      pointer-events: none;
+    }
+
+    .model-fallback {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      color: rgba(220, 232, 245, .72);
+      font-size: 11px;
+      white-space: nowrap;
     }
 
     .orbit {
@@ -383,11 +622,41 @@
       background: repeating-linear-gradient(to bottom, var(--orange) 0 4px, transparent 4px 8px);
     }
 
+    .shoulder-motion-guide {
+      position: absolute;
+      left: 50%;
+      bottom: 8px;
+      width: 246px;
+      height: 278px;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 1;
+      overflow: visible;
+    }
+
+    .shoulder-motion-guide path {
+      fill: none;
+      stroke: var(--orange);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 7 8;
+      filter: drop-shadow(0 0 8px rgba(255, 138, 0, .55));
+      animation: shoulderDash 1.35s ease-in-out infinite;
+    }
+
+    @keyframes shoulderDash {
+      0% { stroke-dashoffset: 44; opacity: .42; }
+      45% { opacity: 1; }
+      100% { stroke-dashoffset: 0; opacity: .86; }
+    }
+
     .person {
       position: relative;
       width: 126px;
       height: 270px;
       filter: drop-shadow(0 8px 18px rgba(155, 188, 255, .2));
+      z-index: 2;
     }
 
     .head {
@@ -570,6 +839,63 @@
       color: #fff;
       margin-bottom: 4px;
       font-size: 13px;
+    }
+
+    .demo-card.motion-card {
+      width: 142px;
+      min-height: 122px;
+      padding: 10px 10px 12px;
+    }
+
+    .motion-card .caption {
+      margin-top: 4px;
+      color: #dce5ed;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .motion-stick {
+      display: block;
+      width: 118px;
+      height: 76px;
+      margin: 2px auto 0;
+      overflow: visible;
+    }
+
+    .motion-stick .body-line,
+    .motion-stick .leg-line,
+    .motion-stick .head,
+    .motion-stick .arm-line {
+      fill: none;
+      stroke: #e7eef8;
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .motion-stick .head {
+      fill: none;
+    }
+
+    .motion-stick .ghost-arm {
+      fill: none;
+      stroke: rgba(231, 238, 248, .38);
+      stroke-width: 4;
+      stroke-linecap: round;
+    }
+
+    .motion-stick .path-line {
+      fill: none;
+      stroke: var(--orange);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 6 6;
+      filter: drop-shadow(0 0 7px rgba(255, 138, 0, .58));
+    }
+
+    .motion-stick .arrow {
+      fill: var(--orange);
+      filter: drop-shadow(0 0 7px rgba(255, 138, 0, .58));
     }
 
     .apose-demo {
@@ -955,6 +1281,23 @@
       font-size: 15px;
     }
 
+    .summary.neck-result-summary {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .summary.neck-result-summary div {
+      display: block;
+      text-align: center;
+      padding: 14px 8px;
+    }
+
+    .summary.neck-result-summary span {
+      margin-top: 8px;
+      text-align: center;
+      font-size: 14px;
+    }
+
     .done-copy {
       margin-top: 34px;
       text-align: center;
@@ -1112,19 +1455,19 @@
         valuesDone: ["164.5°", "170.0°", "177.0°", "179.5°"],
         doneCopy: "本次肩部测量已全部完成",
         states: [
-          { id: "SH_CALIB", label: "校准中...", active: 0, values: ["--","--","--","--"], hint: ["请面向屏幕，双脚站稳，双臂自然下垂。"], pose: "body-neutral", p: 0 },
+          { id: "SH_CALIB", label: "校准中...", active: 0, values: ["--","--","--","--"], hint: ["请面向屏幕，双脚站稳，双臂自然下垂。"], pose: "body-neutral", visual: "assets/design/shoulder-neutral.png", p: 0 },
           { id: "SH_CD3", label: "即将开始", active: 0, values: ["--","--","--","--"], hint: ["请保持身体静止；倒计时结束后将测量外展上举-左。"], countdown: "3", p: 0 },
           { id: "SH_CD2", label: "即将开始", active: 0, values: ["--","--","--","--"], hint: ["请保持身体静止；倒计时结束后将测量外展上举-左。"], countdown: "2", p: 0 },
           { id: "SH_CD1", label: "即将开始", active: 0, values: ["--","--","--","--"], hint: ["请保持身体静止；倒计时结束后将测量外展上举-左。"], countdown: "1", p: 0 },
-          { id: "SH_M1", label: "测量中", active: 0, values: ["158.0°","--","--","--"], hint: ["左手向左伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。"], pose: "left-abduction", demo: "外展上举-左循环", timer: true, p: 25 },
-          { id: "SH_OK1", label: "测量成功", active: 0, done: [0], values: ["164.5°","--","--","--"], hint: ["很好，请缓慢放下左手。"], pose: "left-abduction", success: "left", demo: "外展上举-左", p: 25 },
-          { id: "SH_M2", label: "测量中", active: 1, done: [0], values: ["164.5°","168.0°","--","--"], hint: ["右手向右伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。"], pose: "right-abduction", demo: "外展上举-右循环", timer: true, p: 50 },
-          { id: "SH_OK2", label: "测量成功", active: 1, done: [0,1], values: ["164.5°","170.0°","--","--"], hint: ["很好，请缓慢放下右手。"], pose: "right-abduction", success: "right", demo: "外展上举-右", p: 50 },
-          { id: "SH_TRANS", label: "准备前屈上举", active: 2, done: [0,1], values: ["164.5°","170.0°","--","--"], hint: ["外展上举测量已完成。接下来进入前屈上举测量，请将双臂自然下垂。"], pose: "body-neutral", demo: "即将切换前屈上举", p: 50 },
-          { id: "SH_M3", label: "测量中", active: 2, done: [0,1], values: ["164.5°","170.0°","132.0°","--"], hint: ["左手向前伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。"], pose: "left-flexion", demo: "前屈上举-左循环", timer: true, p: 75 },
-          { id: "SH_OK3", label: "测量成功", active: 2, done: [0,1,2], values: ["164.5°","170.0°","177.0°","--"], hint: ["很好，请缓慢放下左手。"], pose: "left-flexion", success: "left", demo: "前屈上举-左", p: 75 },
-          { id: "SH_M4", label: "测量中", active: 3, done: [0,1,2], values: ["164.5°","170.0°","177.0°","175.0°"], hint: ["右手向前伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。"], pose: "right-flexion", demo: "前屈上举-右循环", timer: true, p: 100 },
-          { id: "SH_OK4", label: "测量成功", active: 3, done: [0,1,2,3], values: ["164.5°","170.0°","177.0°","179.5°"], hint: ["很好，请缓慢放下右手。"], pose: "right-flexion", success: "right", demo: "前屈上举-右", p: 100 },
+          { id: "SH_M1", label: "测量中", active: 0, values: ["158.0°","--","--","--"], hint: ["左手向左伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。"], pose: "left-abduction", visual: "assets/design/shoulder-abduction-left.png", demo: "外展上举-左循环", timer: true, p: 25 },
+          { id: "SH_OK1", label: "测量成功", active: 0, done: [0], values: ["164.5°","--","--","--"], hint: ["很好，请缓慢放下左手。"], pose: "left-abduction", visual: "assets/design/shoulder-abduction-left.png", success: "left", demo: "外展上举-左", p: 25 },
+          { id: "SH_M2", label: "测量中", active: 1, done: [0], values: ["164.5°","168.0°","--","--"], hint: ["右手向右伸直，掌心朝内，缓慢展开上举至最高处，并停止2秒。"], pose: "right-abduction", visual: "assets/design/shoulder-abduction-right.png", demo: "外展上举-右循环", timer: true, p: 50 },
+          { id: "SH_OK2", label: "测量成功", active: 1, done: [0,1], values: ["164.5°","170.0°","--","--"], hint: ["很好，请缓慢放下右手。"], pose: "right-abduction", visual: "assets/design/shoulder-abduction-right.png", success: "right", demo: "外展上举-右", p: 50 },
+          { id: "SH_TRANS", label: "准备前屈上举", active: 2, done: [0,1], values: ["164.5°","170.0°","--","--"], hint: ["接下来测量前屈上举，请继续面向屏幕站立。", "手臂需要从身体前方向上抬起。"], pose: "body-neutral", visual: "assets/design/shoulder-neutral.png", demoType: "flexion", p: 50 },
+          { id: "SH_M3", label: "测量中", active: 2, done: [0,1], values: ["164.5°","170.0°","132.0°","--"], hint: ["请继续面向屏幕站立；", "左手从身体前方向上抬起至最高处，掌心朝内。"], pose: "left-flexion", visual: "assets/design/shoulder-flexion-left.png", demoType: "flexion", timer: true, p: 75 },
+          { id: "SH_OK3", label: "测量成功", active: 2, done: [0,1,2], values: ["164.5°","170.0°","177.0°","--"], hint: ["很好，请缓慢放下左手。"], pose: "left-flexion", visual: "assets/design/shoulder-flexion-left.png", success: "left", demo: "前屈上举-左", p: 75 },
+          { id: "SH_M4", label: "测量中", active: 3, done: [0,1,2], values: ["164.5°","170.0°","177.0°","175.0°"], hint: ["请继续面向屏幕站立；", "右手从身体前方向上抬起至最高处，掌心朝内。"], pose: "right-flexion", visual: "assets/design/shoulder-flexion-right.png", demoType: "flexion", timer: true, p: 100 },
+          { id: "SH_OK4", label: "测量成功", active: 3, done: [0,1,2,3], values: ["164.5°","170.0°","177.0°","179.5°"], hint: ["很好，请缓慢放下右手。"], pose: "right-flexion", visual: "assets/design/shoulder-flexion-right.png", success: "right", demo: "前屈上举-右", p: 100 },
           { id: "SH_DONE", label: "已完成", donePage: true, p: 100 }
         ]
       },
@@ -1138,14 +1481,14 @@
           { id: "NK_CD3", label: "即将开始", active: 0, values: ["--","--","--"], hint: ["请保持身体和头部静止；倒计时结束后将测量颈部活动度。"], countdown: "3", p: 0 },
           { id: "NK_CD2", label: "即将开始", active: 0, values: ["--","--","--"], hint: ["请保持身体和头部静止；倒计时结束后将测量颈部活动度。"], countdown: "2", p: 0 },
           { id: "NK_CD1", label: "即将开始", active: 0, values: ["--","--","--"], hint: ["请保持身体和头部静止；倒计时结束后将测量颈部活动度。"], countdown: "1", p: 0 },
-          { id: "NK_M1", label: "测量中", active: 0, values: ["测量中","--","--"], hint: ["低头，让下巴靠近胸口。", "保持肩膀以下不动。"], pose: "neck-flexion", timer: true, p: 16 },
-          { id: "NK_M2", label: "测量中", active: 0, values: ["测量中","--","--"], hint: ["抬头向后仰到最大角度。", "保持肩膀以下不动。"], pose: "neck-extension", timer: true, p: 32 },
-          { id: "NK_RETURN1", label: "回正提示", active: 1, done: [0], values: ["完成","--","--"], hint: ["很好，请缓慢将头部回到正中。"], pose: "neck-neutral", p: 36 },
-          { id: "NK_M3", label: "测量中", active: 1, done: [0], values: ["完成","测量中","--"], hint: ["头部向左侧倾斜，让左耳靠近左肩。", "保持肩膀不动。"], pose: "neck-left-bend", timer: true, p: 50 },
-          { id: "NK_M4", label: "测量中", active: 1, done: [0], values: ["完成","测量中","--"], hint: ["头部向右侧倾斜，让右耳靠近右肩。", "保持肩膀不动。"], pose: "neck-right-bend", timer: true, p: 64 },
-          { id: "NK_RETURN2", label: "回正提示", active: 2, done: [0,1], values: ["完成","完成","--"], hint: ["很好，请缓慢将头部回到正中。"], pose: "neck-neutral", p: 68 },
-          { id: "NK_M5", label: "测量中", active: 2, done: [0,1], values: ["完成","完成","测量中"], hint: ["头部向左转，看向左侧最大角度。", "保持肩膀以下不动。"], pose: "neck-left-rotate", timer: true, p: 84 },
-          { id: "NK_M6", label: "测量中", active: 2, done: [0,1], values: ["完成","完成","测量中"], hint: ["头部向右转，看向右侧最大角度。", "保持肩膀以下不动。"], pose: "neck-right-rotate", timer: true, p: 100 },
+          { id: "NK_M1", label: "测量中", active: 0, values: ["测量中","--","--"], hint: ["低头，让下巴靠近胸口。", "保持肩膀以下不动。"], pose: "neck-flexion", visual: "assets/design/neck/neck-flexion.png", timer: true, p: 16 },
+          { id: "NK_M2", label: "测量中", active: 0, values: ["测量中","--","--"], hint: ["缓慢抬头后仰，到舒适的最大角度。", "保持肩膀以下不动。"], pose: "neck-extension", visual: "assets/design/neck/neck-extension.png", timer: true, p: 32 },
+          { id: "NK_RETURN1", label: "回正提示", active: 1, done: [0], values: ["完成","--","--"], hint: ["很好，请缓慢将头部回到正中。"], pose: "neck-neutral", visual: "assets/design/neck/neck-neutral-return.png", returnVisual: true, p: 36 },
+          { id: "NK_M3", label: "测量中", active: 1, done: [0], values: ["完成","测量中","--"], hint: ["头部向左侧倾斜，让左耳靠近左肩。", "保持肩膀不动。"], pose: "neck-left-bend", visual: "assets/design/neck/neck-left-bend.png", timer: true, p: 50 },
+          { id: "NK_M4", label: "测量中", active: 1, done: [0], values: ["完成","测量中","--"], hint: ["头部向右侧倾斜，让右耳靠近右肩。", "保持肩膀不动。"], pose: "neck-right-bend", visual: "assets/design/neck/neck-right-bend.png", timer: true, p: 64 },
+          { id: "NK_RETURN2", label: "回正提示", active: 2, done: [0,1], values: ["完成","完成","--"], hint: ["很好，请缓慢将头部回到正中。"], pose: "neck-neutral", visual: "assets/design/neck/neck-neutral-return.png", returnVisual: true, p: 68 },
+          { id: "NK_M5", label: "测量中", active: 2, done: [0,1], values: ["完成","完成","测量中"], hint: ["头部向左转，看向左侧。", "保持肩膀以下不动。"], pose: "neck-left-rotate", visual: "assets/design/neck/neck-left-rotate.png", timer: true, p: 84 },
+          { id: "NK_M6", label: "测量中", active: 2, done: [0,1], values: ["完成","完成","测量中"], hint: ["头部向右转，看向右侧。", "保持肩膀以下不动。"], pose: "neck-right-rotate", visual: "assets/design/neck/neck-right-rotate.png", timer: true, p: 100 },
           { id: "NK_DONE", label: "已完成", donePage: true, p: 100 }
         ]
       }
@@ -1220,11 +1563,12 @@
     let stateIndex = 0;
     let bodyHintTimer = null;
 
-    function bodyPerson(pose = "body-neutral", angleResults = null) {
+    function bodyPerson(pose = "body-neutral", angleResults = null, showMotionGuide = false) {
       const style = poseStyle(pose);
       return `
         <div class="orbit"></div>
         <div class="angle-line" style="--line-rot:${style.line};--line-op:${style.lineOp}"></div>
+        ${showMotionGuide ? shoulderMotionGuide(pose) : ""}
         ${angleResults && angleResults.left ? `<div class="shoulder-angle-result left">${angleResults.left}</div>` : ""}
         ${angleResults && angleResults.right ? `<div class="shoulder-angle-result right">${angleResults.right}</div>` : ""}
         <div class="success left ${style.success === "left" ? "show" : ""}">✓</div>
@@ -1234,8 +1578,81 @@
         </div>`;
     }
 
+    function shoulderMotionGuide(pose) {
+      const paths = {
+        "left-abduction": `<path d="M108 188 C96 150 81 112 52 74" />`,
+        "right-abduction": `<path d="M138 188 C150 150 165 112 194 74" />`,
+        "left-flexion": `<path d="M108 190 C92 142 90 96 108 54" />`,
+        "right-flexion": `<path d="M138 190 C154 142 156 96 138 54" />`
+      };
+      return paths[pose] ? `<svg class="shoulder-motion-guide" viewBox="0 0 246 278" aria-hidden="true">${paths[pose]}</svg>` : "";
+    }
+
+    function shoulderDemoCard(type) {
+      if (type !== "flexion") return "";
+      return `
+        <div class="demo-card motion-card">
+          <b>动作方向</b>
+          <svg class="motion-stick" viewBox="0 0 118 76" aria-hidden="true">
+            <circle class="head" cx="45" cy="13" r="8"></circle>
+            <path class="body-line" d="M45 22 L45 52"></path>
+            <path class="leg-line" d="M45 52 L33 72"></path>
+            <path class="leg-line" d="M45 52 L58 72"></path>
+            <path class="ghost-arm" d="M45 28 L72 43"></path>
+            <path class="arm-line" d="M45 28 L46 8"></path>
+            <path class="path-line" d="M74 44 C62 35 51 24 47 11"></path>
+            <path class="arrow" d="M47 4 L52 14 L43 12 Z"></path>
+          </svg>
+          <div class="caption">手臂从前方向上抬起</div>
+        </div>`;
+    }
+
+    function shoulderFlexionReference(state) {
+      if (route !== "shoulder" || state.donePage || state.active < 2) return "";
+      return `
+        <div class="shoulder-flexion-ref">
+          <b>动作方向</b>
+          <svg class="motion-stick" viewBox="0 0 118 76" aria-hidden="true">
+            <circle class="head" cx="45" cy="13" r="8"></circle>
+            <path class="body-line" d="M45 22 L45 52"></path>
+            <path class="leg-line" d="M45 52 L33 72"></path>
+            <path class="leg-line" d="M45 52 L58 72"></path>
+            <path class="ghost-arm" d="M45 28 L72 43"></path>
+            <path class="arm-line" d="M45 28 L46 8"></path>
+            <path class="path-line" d="M74 44 C62 35 51 24 47 11"></path>
+            <path class="arrow" d="M47 4 L52 14 L43 12 Z"></path>
+          </svg>
+          <div class="caption">从前方向上抬起</div>
+        </div>`;
+    }
+
+    function referenceVisual(src) {
+      return `<div class="reference-visual"><img src="${src}" alt="" /></div>`;
+    }
+
     function neckModel(pose = "neck-neutral", success = "") {
       const style = neckStyle(pose);
+      if (success === "__glb__") return `
+        <div class="neck-glb-wrap ${style.view}">
+          <div class="orbit"></div>
+          <model-viewer
+            class="neck-glb-viewer"
+            src="assets/shoulder-angle-model.glb"
+            alt="颈部测量人体模型"
+            camera-orbit="${style.orbit}"
+            field-of-view="${style.fov}"
+            exposure="1.05"
+            shadow-intensity="0"
+            interaction-prompt="none"
+            disable-zoom>
+            <div class="model-fallback" slot="poster">人体模型加载中</div>
+          </model-viewer>
+          <div class="angle-line" style="--line-rot:${style.line};--line-op:${style.lineOp}"></div>
+          ${style.showAngles ? `<div class="angle-text left">37.0°</div><div class="angle-text right">37.0°</div>` : ""}
+          ${style.cue}
+          <div class="success left ${success === "left" ? "show" : ""}">✓</div>
+          <div class="success right ${success === "right" ? "show" : ""}">✓</div>
+        </div>`;
       return `
         <div class="orbit"></div>
         <div class="angle-line" style="--line-rot:${style.line};--line-op:${style.lineOp}"></div>
@@ -1267,15 +1684,15 @@
       const bendRightCue = `<svg class="neck-cue" viewBox="0 0 168 120" aria-hidden="true"><path d="M82 26 C102 36 114 52 120 74"/><path d="M120 74 l-11 -5 M120 74 l4 -12"/></svg>`;
       const rotateLeftCue = `<svg class="neck-cue" viewBox="0 0 168 120" aria-hidden="true"><path class="solid" d="M112 44 C92 28 65 30 48 48"/><path class="solid" d="M48 48 l12 -2 M48 48 l5 -11"/></svg>`;
       const rotateRightCue = `<svg class="neck-cue" viewBox="0 0 168 120" aria-hidden="true"><path class="solid" d="M56 44 C76 28 103 30 120 48"/><path class="solid" d="M120 48 l-12 -2 M120 48 l-5 -11"/></svg>`;
-      const base = { rot: "0deg", x: "0px", y: "0px", line: "0deg", lineOp: 0, view: "front", faceOp: 0, faceX: "0px", scaleX: 1, showAngles: false, cue: "" };
+      const base = { rot: "0deg", x: "0px", y: "0px", line: "0deg", lineOp: 0, view: "front", faceOp: 0, faceX: "0px", scaleX: 1, showAngles: false, cue: "", orbit: "0deg 78deg 2.9m", fov: "28deg" };
       return {
         "neck-neutral": base,
-        "neck-flexion": { ...base, view: "side", rot: "26deg", x: "-8px", y: "12px", line: "-34deg", lineOp: 1, cue: sideForwardCue },
-        "neck-extension": { ...base, view: "side", rot: "-24deg", x: "10px", y: "-6px", line: "34deg", lineOp: 1, cue: sideBackCue },
+        "neck-flexion": { ...base, view: "side", rot: "26deg", x: "-8px", y: "12px", line: "-34deg", lineOp: 1, cue: sideForwardCue, orbit: "72deg 78deg 2.85m" },
+        "neck-extension": { ...base, view: "side", rot: "-24deg", x: "10px", y: "-6px", line: "34deg", lineOp: 1, cue: sideBackCue, orbit: "72deg 78deg 2.85m" },
         "neck-left-bend": { ...base, rot: "-22deg", x: "-8px", line: "-38deg", lineOp: 1, showAngles: true, cue: bendLeftCue },
         "neck-right-bend": { ...base, rot: "22deg", x: "8px", line: "38deg", lineOp: 1, showAngles: true, cue: bendRightCue },
-        "neck-left-rotate": { ...base, view: "rotate", rot: "-4deg", x: "-18px", scaleX: .72, line: "-38deg", lineOp: 1, faceOp: 1, faceX: "-9px", showAngles: true, cue: rotateLeftCue },
-        "neck-right-rotate": { ...base, view: "rotate", rot: "4deg", x: "18px", scaleX: .72, line: "38deg", lineOp: 1, faceOp: 1, faceX: "9px", showAngles: true, cue: rotateRightCue }
+        "neck-left-rotate": { ...base, view: "rotate", rot: "-4deg", x: "-18px", scaleX: .72, line: "-38deg", lineOp: 1, faceOp: 1, faceX: "-9px", showAngles: true, cue: rotateLeftCue, orbit: "-24deg 78deg 2.9m" },
+        "neck-right-rotate": { ...base, view: "rotate", rot: "4deg", x: "18px", scaleX: .72, line: "38deg", lineOp: 1, faceOp: 1, faceX: "9px", showAngles: true, cue: rotateRightCue, orbit: "24deg 78deg 2.9m" }
       }[pose] || base;
     }
 
@@ -1304,8 +1721,8 @@
       document.querySelector(".progress-mini").hidden = false;
       $("measureTitle").textContent = flow.title;
       $("stateLabel").textContent = route === "shoulder" ? "" : state.label || "";
-      $("progressText").textContent = state.donePage ? "4/4" : state.countdown ? "--" : state.p ? `${state.p / 25}/4` : "--";
-      document.querySelector(".progress-mini").hidden = route === "shoulder";
+      $("progressText").textContent = progressTextForState(route, state);
+      document.querySelector(".progress-mini").hidden = false;
       document.documentElement.style.setProperty("--p", `${state.p || 0}%`);
       $("stateName").textContent = state.id;
       $("prevBtn").hidden = false;
@@ -1326,13 +1743,23 @@
       $("countdown").textContent = state.countdown || "";
       $("stage").hidden = Boolean(state.countdown || state.donePage);
       $("hint").hidden = Boolean(state.donePage);
-      $("bottomTimer").hidden = !state.timer;
+      $("bottomTimer").hidden = true;
       $("hint").classList.toggle("dark", route === "neck");
 
       if (state.donePage) {
         $("stepbar").hidden = false;
         $("stepbar").className = "";
-        $("stepbar").innerHTML = `<div class="summary">${flow.labels.map((label, i) => `<div>${label}<span>${flow.valuesDone[i]}</span></div>`).join("")}</div><div class="done-copy">${flow.doneCopy}</div><div class="done-actions"><span>[ 返回 ]</span><span>[ 下一项 ]</span></div>`;
+        const summaryHtml = route === "neck"
+          ? `<div class="summary neck-result-summary">
+              <div>前屈<span>37.0°</span></div>
+              <div>后伸<span>37.0°</span></div>
+              <div>左侧屈<span>37.0°</span></div>
+              <div>右侧屈<span>37.0°</span></div>
+              <div>左旋转<span>37.0°</span></div>
+              <div>右旋转<span>37.0°</span></div>
+            </div>`
+          : `<div class="summary">${flow.labels.map((label, i) => `<div>${label}<span>${flow.valuesDone[i]}</span></div>`).join("")}</div>`;
+        $("stepbar").innerHTML = `${summaryHtml}<div class="done-copy">${flow.doneCopy}</div><div class="done-actions"><span>[ 返回 ]</span><span>[ 下一项 ]</span></div>`;
         $("countdown").hidden = true;
         $("stage").hidden = true;
         $("hint").hidden = true;
@@ -1412,6 +1839,40 @@
       }
     }
 
+    function progressTextForState(currentRoute, state) {
+      if (currentRoute === "body") return "";
+      if (currentRoute === "shoulder") {
+        const shoulderActionIndex = {
+          SH_M1: 1,
+          SH_OK1: 1,
+          SH_M2: 2,
+          SH_OK2: 2,
+          SH_TRANS: 2,
+          SH_M3: 3,
+          SH_OK3: 3,
+          SH_M4: 4,
+          SH_OK4: 4,
+          SH_DONE: 4
+        }[state.id];
+        return shoulderActionIndex ? `${shoulderActionIndex}/4` : "--";
+      }
+      if (currentRoute === "neck") {
+        const neckActionIndex = {
+          NK_M1: 1,
+          NK_M2: 2,
+          NK_RETURN1: 2,
+          NK_M3: 3,
+          NK_M4: 4,
+          NK_RETURN2: 4,
+          NK_M5: 5,
+          NK_M6: 6,
+          NK_DONE: 6
+        }[state.id];
+        return neckActionIndex ? `${neckActionIndex}/6` : "--";
+      }
+      return state.donePage ? "4/4" : state.countdown ? "--" : state.p ? `${state.p / 25}/4` : "--";
+    }
+
     function renderStepbar(flow, state) {
       if (route === "shoulder") {
         const activeStage = state.active >= 2 ? 1 : 0;
@@ -1425,18 +1886,35 @@
           const mark = active ? `<span class="mark">●&gt;&gt;</span>` : "";
           const check = done ? " ✓" : "";
           return `<div class="step ${active} ${done}"><div class="label">${mark}${label}${check}</div></div>`;
-        }).join("");
+        }).join("") + shoulderFlexionReference(state);
         return;
       }
 
-      $("stepbar").className = "stepbar";
+      $("stepbar").className = route === "neck" ? "stepbar neck-stagebar" : "stepbar";
       $("stepbar").innerHTML = flow.labels.map((label, i) => {
         const active = state.active === i ? "active" : "";
         const done = (state.done || []).includes(i) ? "done" : "";
         const mark = state.active === i ? `<span class="mark">●&gt;&gt;</span>` : "";
         const check = (state.done || []).includes(i) ? " ✓" : "";
         return `<div class="step ${active} ${done}"><div class="label">${mark}${label}${check}</div><div class="value">${state.values[i]}</div></div>`;
-      }).join("");
+      }).join("") + neckActionReference(state);
+    }
+
+    function neckActionReference(state) {
+      if (route !== "neck" || !["NK_M5", "NK_M6"].includes(state.id)) return "";
+      const isLeft = state.id === "NK_M5";
+      const arrow = isLeft
+        ? `<path d="M20 10 C10 9 6 15 9 22"/><path d="M9 22 l-2 -7 M9 22 l7 -2"/>`
+        : `<path d="M8 10 C18 9 22 15 19 22"/><path d="M19 22 l2 -7 M19 22 l-7 -2"/>`;
+      const text = isLeft ? "头部向左转" : "头部向右转";
+      return `
+        <div class="neck-action-ref">
+          <svg viewBox="0 0 28 28" aria-hidden="true">
+            <circle class="head" cx="14" cy="14" r="6"></circle>
+            ${arrow}
+          </svg>
+          <span>动作参考<br>${text}</span>
+        </div>`;
     }
 
     function renderHint(lines) {
@@ -1445,12 +1923,18 @@
 
     function renderStage(state) {
       const isNeck = route === "neck";
-      $("stage").className = isNeck ? "stage neck-stage" : "stage";
-      $("stage").innerHTML = isNeck ? neckModel(state.pose, state.success) : bodyPerson(state.pose, shoulderAngleResults(state));
-      if (state.success && !isNeck) {
+      const shouldShowReference = Boolean(state.visual);
+      const stageBase = isNeck ? "stage neck-stage" : "stage";
+      const shoulderReference = route === "shoulder" && shouldShowReference ? " shoulder-reference-stage" : "";
+      $("stage").className = `${stageBase}${shouldShowReference ? " reference-stage" : ""}${shoulderReference}${state.returnVisual ? " return-reference" : ""}`;
+      $("stage").innerHTML = shouldShowReference ? referenceVisual(state.visual) : (isNeck ? neckModel(state.pose, state.success) : bodyPerson(state.pose, shoulderAngleResults(state), route === "shoulder" && state.timer));
+      if (state.success && !isNeck && !state.visual) {
         $("stage").querySelector(`.success.${state.success}`).classList.add("show");
       }
-      if (state.demo) {
+      if (state.demoType && !state.visual) {
+        $("stage").insertAdjacentHTML("beforeend", shoulderDemoCard(state.demoType));
+      }
+      if (state.demo && !state.visual) {
         $("stage").insertAdjacentHTML("beforeend", `<div class="demo-card"><b>示范</b>${state.demo}</div>`);
       }
     }
